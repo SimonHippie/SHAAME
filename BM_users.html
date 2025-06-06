@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hall of Shame</title>
+  <style>
+    body {
+      display: flex;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      color: #333;
+    }
+
+    aside {
+      width: 25%;
+      padding: 20px;
+      background-color: #222;
+      color: #fff;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+    }
+
+    main {
+      width: 75%;
+      padding: 40px;
+    }
+
+    h1 {
+      color: #c0392b;
+    }
+
+    label {
+      display: block;
+      margin: 20px 0 5px;
+      font-weight: bold;
+    }
+
+    input[type="text"] {
+      width: 80%;
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-right: 10px;
+      cursor: pointer;
+      background-color: #c0392b;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+    }
+
+    .message {
+      margin: 10px 0;
+      font-weight: bold;
+    }
+
+    .success {
+      color: green;
+    }
+
+    .error {
+      color: red;
+    }
+
+    ul {
+      margin-top: 10px;
+    }
+
+    li {
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <aside>
+    <h2>What is this page for?</h2>
+    <p>
+      This page is your personal <strong>Hall of Shame</strong> for Clash Royale.<br><br>
+      If someone mocks you during a game – and you know they deserve payback – type their name in the field above. It will be added to a shared database of <em>idiots who laughed first</em>.<br><br>
+      Later, if you're about to play against someone, you (or anyone) can open this site and type their name in the "Check an idiot" field.<br><br>
+      If that name has already been submitted, you'll see the message:<br>
+      <strong>"This idiot deserves to be laughed at."</strong><br><br>
+      Because let’s be honest… they truly deserve it.
+    </p>
+  </aside>
+
+  <main>
+    <h1>Hall of Shame</h1>
+
+    <label for="nameInput">Add an idiot name:</label>
+    <input type="text" id="nameInput" placeholder="Enter name..." />
+    <button onclick="addName()">Add</button>
+    <div class="message" id="addMessage"></div>
+
+    <label for="checkInput">Check an idiot:</label>
+    <input type="text" id="checkInput" placeholder="Enter name to check..." />
+    <button onclick="checkName()">Check</button>
+    <div class="message" id="checkMessage"></div>
+
+    <h3>Idiots already added:</h3>
+    <ul id="nameList"></ul>
+  </main>
+
+  <script>
+    const apiUrl = 'https://sheetdb.io/api/v1/ue9zzp3vm6o9x';
+
+    async function getNames() {
+      const res = await fetch(apiUrl);
+      const data = await res.json();
+      return data.map(entry => entry.Name.toLowerCase());
+    }
+
+    async function displayNames() {
+      const names = await getNames();
+      const list = document.getElementById('nameList');
+      list.innerHTML = '';
+      names.forEach(name => {
+        const li = document.createElement('li');
+        li.textContent = name;
+        list.appendChild(li);
+      });
+    }
+
+    async function addName() {
+      const nameInput = document.getElementById('nameInput');
+      const message = document.getElementById('addMessage');
+      const name = nameInput.value.trim();
+
+      if (!name) return;
+
+      const names = await getNames();
+      if (names.includes(name.toLowerCase())) {
+        message.textContent = 'This idiot deserves to be laughed at.';
+        message.className = 'message error';
+        return;
+      }
+
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ data: [{ Name: name }] })
+      });
+
+      if (res.ok) {
+        message.textContent = `"${name}" – this idiot hasn't laughed at anyone but you. We'll get him next time!!!`;
+        message.className = 'message success';
+        nameInput.value = '';
+        displayNames();
+      } else {
+        message.textContent = 'Error adding the name.';
+        message.className = 'message error';
+      }
+    }
+
+    async function checkName() {
+      const checkInput = document.getElementById('checkInput');
+      const message = document.getElementById('checkMessage');
+      const name = checkInput.value.trim().toLowerCase();
+
+      if (!name) return;
+
+      const names = await getNames();
+      if (names.includes(name)) {
+        message.textContent = 'This idiot deserves to be laughed at.';
+        message.className = 'message error';
+      } else {
+        message.textContent = 'This name is not in the Hall of Shame (yet).';
+        message.className = 'message success';
+      }
+    }
+
+    displayNames();
+  </script>
+</body>
+</html>
